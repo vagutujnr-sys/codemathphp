@@ -55,15 +55,18 @@ async function pinIsAssigned(
 
 Deno.serve(async (request) => {
   const origin = request.headers.get("origin");
-  const allowedOrigins = (
-    Deno.env.get("PIN_LOGIN_ALLOWED_ORIGINS") ??
-    "https://codemathphp.co.za,http://localhost:3000,http://localhost:5173"
-  )
-    .split(",")
-    .map((value) => value.trim());
+  const allowedOrigins = [
+    "https://codemathphp-website.vercel.app",
+    "https://codemathphp.co.za",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    ...(Deno.env.get("PIN_LOGIN_ALLOWED_ORIGINS") ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  ];
   const allowedOrigin =
-    origin &&
-    (allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin))
+    origin && (allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin))
       ? origin
       : "https://codemathphp.co.za";
   if (origin && !allowedOrigins.includes(origin) && !/^http:\/\/localhost:\d+$/.test(origin))

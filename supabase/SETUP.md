@@ -15,10 +15,10 @@ The new React workspace is served at `/invoicing`. It replaces the non-functiona
 3. Set the Edge Function secrets. Use independently generated, high-entropy values for the three secrets and keep `PIN_FINGERPRINT_SECRET` stable: changing it without re-fingerprinting existing accounts would break duplicate-PIN detection.
 
    ```text
-   supabase secrets set PIN_RATE_LIMIT_SECRET=... PIN_FINGERPRINT_SECRET=... PIN_ADMIN_BOOTSTRAP_SECRET=... PIN_LOGIN_ALLOWED_ORIGINS=https://codemathphp.co.za,http://localhost:5173
+   supabase secrets set PIN_RATE_LIMIT_SECRET=... PIN_FINGERPRINT_SECRET=... PIN_ADMIN_BOOTSTRAP_SECRET=... PIN_LOGIN_ALLOWED_ORIGINS=https://codemathphp-website.vercel.app,https://codemathphp.co.za,http://localhost:3000,http://localhost:5173
    ```
 
-   `PIN_LOGIN_ALLOWED_ORIGINS` is used by both PIN sign-in and account-management functions. For local-network testing, include the development computer's current origin (currently `http://172.20.10.14:5173`); update it if the computer's LAN address changes.
+   `PIN_LOGIN_ALLOWED_ORIGINS` adds origins to the built-in Vercel, production-domain, and localhost allowlist and is used by both PIN sign-in and account-management functions. Add any other deployed app origins here, comma-separated, then redeploy both functions. For local-network testing, include the development computer's current origin (currently `http://172.20.10.14:5173`); update it if the computer's LAN address changes.
 
 4. Deploy both functions:
 
