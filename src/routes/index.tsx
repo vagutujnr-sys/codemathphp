@@ -1,11 +1,30 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  ArrowRight, ArrowUpRight, Code2, Smartphone, Palette, ShoppingBag, TrendingUp, Cpu,
-  ShieldCheck, Sparkles, CheckCircle2, Mail, MessageCircle, MapPin, Clock, Zap,
+  ArrowRight,
+  ArrowUpRight,
+  Code2,
+  Smartphone,
+  Palette,
+  ShoppingBag,
+  TrendingUp,
+  Cpu,
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Mail,
+  MessageCircle,
+  MapPin,
+  Clock,
+  Zap,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  LockKeyhole,
 } from "lucide-react";
-import logo from "@/assets/codemath-logo.png.asset.json";
-import heroImg from "@/assets/hero-team.jpg";
+import logo from "@/assets/codemath-logo.png";
+import heroImg from "@/assets/hero-team.png";
 import meetingImg from "@/assets/client-meeting.jpg";
 import { ProjectDialogProvider, useProjectDialog } from "@/components/ProjectDialog";
 
@@ -54,6 +73,12 @@ const projects: Project[] = [
   { name: "BookIt Salon", cat: "Mobile Apps", tag: "Beauty · Mobile App", headline: "Book Your Chair in 3 Taps", text: "Android and iOS booking app with reminders and deposits that cut no-shows for busy salons.", accent: "from-primary to-secondary", stats: [["Android", "+ iOS"], ["Fewer", "no-shows"]] },
 ];
 const cats = ["All", "Websites", "Web Apps", "Mobile Apps", "Dashboards"];
+const socialIcons = [
+  [Facebook, "Facebook"],
+  [Instagram, "Instagram"],
+  [Linkedin, "LinkedIn"],
+  [Youtube, "YouTube"],
+] as const;
 
 const process = [
   ["01", "Discover", "We unpack your goals, customers and numbers."],
@@ -237,24 +262,55 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
+        <div className="border-b border-primary/80 bg-primary">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-2 text-xs font-medium text-primary-foreground">
+            <div className="flex items-center gap-4">
+              <span>Privacy Policy</span>
+              <span aria-hidden="true" className="h-3 w-px bg-primary-foreground/40" />
+              <span>Terms &amp; Conditions</span>
+            </div>
+            <div className="flex items-center gap-5">
+              <a href="mailto:developers@codemathphp.co.za" className="transition-opacity hover:opacity-80">
+                developers@codemathphp.co.za
+              </a>
+              <div aria-label="Social media" className="flex items-center gap-3">
+                {socialIcons.map(([Icon, name]) => (
+                  <span key={name} role="img" aria-label={`${name} profile coming soon`}>
+                    <Icon aria-hidden="true" className="h-4 w-4" />
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <a href="#top" aria-label="CodeMath home">
-            <img src={logo.url} alt="CodeMath — You Think It. We Built It." className="h-11 w-auto" />
+            <img src={logo} alt="CodeMath — You Think It. We Built It." className="h-11 w-auto" />
           </a>
-          <nav className="hidden items-center gap-8 text-sm font-semibold md:flex">
-            <a href="#services" className="hover:text-primary">Services</a>
-            <a href="#work" className="hover:text-primary">Portfolio</a>
-            <a href="#special" className="text-primary">$27.50 Special</a>
-            <a href="#about" className="hover:text-primary">About</a>
-          </nav>
-          <button onClick={() => open()} className={`${primaryBtn} px-5 py-2.5 text-sm`}>Start a Project</button>
+          <div className="ml-auto flex items-center gap-3 md:gap-8">
+            <nav className="hidden items-center gap-7 text-sm font-semibold md:flex">
+              <span aria-disabled="true" className="cursor-default text-muted-foreground">Digital Products</span>
+              <a href="#services" className="hover:text-primary">Services</a>
+              <a href="#work" className="hover:text-primary">Portfolio</a>
+              <a href="#special" className="text-primary">$27.50 Special</a>
+              <a href="#about" className="hover:text-primary">About</a>
+            </nav>
+            <Link
+              to="/portal"
+              className="inline-flex items-center gap-2 rounded-sm border border-primary/30 bg-accent px-3 py-2.5 text-sm font-bold text-accent-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground sm:px-4"
+            >
+              <LockKeyhole aria-hidden="true" className="h-4 w-4" />
+              Client Portal
+            </Link>
+            <button onClick={() => open()} className={`${primaryBtn} px-5 py-2.5 text-sm`}>Start a Project</button>
+          </div>
         </div>
       </header>
 
       <section id="top" className="relative overflow-hidden">
         <div className="absolute inset-0 bg-grid opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,black,transparent_70%)]" />
         <div className="absolute inset-0 bg-gradient-warm" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 pb-24 pt-16 lg:grid-cols-2 lg:pt-24">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 pb-8 pt-6 lg:grid-cols-2 lg:pt-8">
           <div className="animate-rise">
             <span className="inline-flex items-center gap-2 rounded-sm border border-primary/30 bg-accent px-4 py-1.5 font-mono text-xs font-medium text-accent-foreground">
               <Sparkles className="h-3.5 w-3.5" /> Proudly African · Building since 2009
@@ -275,18 +331,9 @@ function Index() {
                 Online in 24hrs — $27.50
               </a>
             </div>
-            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-border pt-8">
-              {[[`${years}+`, "Years building"], ["7", "Countries served"], ["300+", "Projects shipped"]].map(([v, l]) => (
-                <div key={l}>
-                  <dt className="font-display text-3xl font-extrabold text-secondary">{v}</dt>
-                  <dd className="mt-1 text-sm text-muted-foreground">{l}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
           <div className="relative animate-rise [animation-delay:150ms]">
-            <div className="absolute -inset-3 translate-x-4 translate-y-4 rounded-sm bg-gradient-primary" />
-            <img src={heroImg} alt="CodeMath developers collaborating in the studio" width={1536} height={1152} className="relative aspect-[4/3] w-full rounded-sm object-cover shadow-card" />
+            <img src={heroImg} alt="CodeMath developers collaborating in the studio" width={1536} height={1152} className="relative aspect-[4/3] w-full rounded-sm bg-transparent object-cover" />
             <div className="absolute -bottom-8 -left-6 rounded-sm border border-border bg-card p-5 shadow-card">
               <pre className="font-mono text-xs leading-relaxed text-muted-foreground">
                 <span className="text-primary">const</span> client = <span className="text-secondary">"you"</span>;{"\n"}
@@ -396,8 +443,8 @@ function Index() {
               <button onClick={() => open()} className="flex w-full items-center gap-4 rounded-sm bg-card p-5 font-bold text-secondary transition-transform hover:-translate-y-0.5">
                 <MessageCircle className="h-5 w-5 text-primary" /> Start a project on WhatsApp <ArrowRight className="ml-auto h-4 w-4" />
               </button>
-              <a href="mailto:hello@codemathphp.co.za" className="flex items-center gap-4 rounded-sm bg-card/15 p-5 font-semibold backdrop-blur hover:bg-card/25">
-                <Mail className="h-5 w-5" /> hello@codemathphp.co.za
+              <a href="mailto:developers@codemathphp.co.za" className="flex items-center gap-4 rounded-sm bg-card/15 p-5 font-semibold backdrop-blur hover:bg-card/25">
+                <Mail className="h-5 w-5" /> developers@codemathphp.co.za
               </a>
               <p className="flex items-center gap-4 rounded-sm bg-card/15 p-5 font-semibold"><MapPin className="h-5 w-5" /> Harare · Johannesburg</p>
             </div>
@@ -407,7 +454,7 @@ function Index() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-10 md:flex-row">
-          <img src={logo.url} alt="CodeMath" className="h-9 w-auto" />
+          <img src={logo} alt="CodeMath" className="h-9 w-auto" />
           <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} CodeMath. Building since 2009.</p>
         </div>
       </footer>

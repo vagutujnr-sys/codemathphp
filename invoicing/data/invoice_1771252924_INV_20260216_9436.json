@@ -1,0 +1,53 @@
+{
+    "invoice_number": "INV-20260216-9436",
+    "date": "2026-02-16",
+    "client_name": "Isimilo Investments",
+    "client_email": "isimiloinvestments@gmail.com",
+    "client_phone": "+263775112525",
+    "items": [
+        {
+            "description": "Corporate Logo",
+            "quantity": 1,
+            "price": 12.53999999999999914734871708787977695465087890625,
+            "total": 12.53999999999999914734871708787977695465087890625
+        },
+        {
+            "description": "Company Profile",
+            "quantity": 1,
+            "price": 24.5,
+            "total": 24.5
+        },
+        {
+            "description": "Basic Website",
+            "quantity": 1,
+            "price": 42.5,
+            "total": 42.5
+        }
+    ],
+    "subtotal": 79.539999999999992041921359486877918243408203125,
+    "total": 79.539999999999992041921359486877918243408203125,
+    "currency": "$",
+    "currency_code": "USD",
+    "base_currency": "USD",
+    "exchange_rate": 1,
+    "subtotal_zar": 79.539999999999992041921359486877918243408203125,
+    "total_zar": 79.539999999999992041921359486877918243408203125,
+    "payment_method": "ecocash",
+    "payment_details": {
+        "phone_number": "+263773956304",
+        "account_name": "Sithembinkosi L Moyo",
+        "instructions": [
+            "Dial *151# on your mobile phone",
+            "Select 'Send Money'",
+            "Select 'To EcoCash Number'",
+            "Enter Phone Number: +263773956304",
+            "Enter the amount shown in your order",
+            "Confirm the transaction",
+            "Send the confirmation message to +27 71 743 2015 on WhatsApp"
+        ]
+    },
+    "notes": "Please attend urgently thank you",
+    "paid": true,
+    "paid_date": "2026-02-17 19:12:49",
+    "created_at": "2026-02-16 14:42:04"
+}

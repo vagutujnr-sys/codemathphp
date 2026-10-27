@@ -1,0 +1,71 @@
+{
+    "invoice_number": "INV-20261005-8392",
+    "date": "2026-10-05",
+    "client_name": "Elkrus Energy (pvt) LTD",
+    "client_email": "",
+    "client_phone": "+263772988606",
+    "items": [
+        {
+            "description": "Web Development",
+            "quantity": 1,
+            "price": 80,
+            "total": 80
+        },
+        {
+            "description": "Domain Registration - Domain name registration (1 year)",
+            "quantity": 1,
+            "price": 12.5,
+            "total": 12.5
+        },
+        {
+            "description": "Email Account Setup - Professional email account setup",
+            "quantity": 1,
+            "price": 2,
+            "total": 2
+        },
+        {
+            "description": "Monthly Hosting - Monthly hosting subscription",
+            "quantity": 1,
+            "price": 3.79999999999999982236431605997495353221893310546875,
+            "total": 3.79999999999999982236431605997495353221893310546875
+        },
+        {
+            "description": "Logo - Corporate Brand Design",
+            "quantity": 1,
+            "price": 17.5,
+            "total": 17.5
+        },
+        {
+            "description": "Company Profile",
+            "quantity": 1,
+            "price": 15,
+            "total": 15
+        }
+    ],
+    "subtotal": 130.80000000000001136868377216160297393798828125,
+    "total": 130.80000000000001136868377216160297393798828125,
+    "currency": "$",
+    "currency_code": "USD",
+    "base_currency": "USD",
+    "exchange_rate": 1,
+    "subtotal_zar": 130.80000000000001136868377216160297393798828125,
+    "total_zar": 130.80000000000001136868377216160297393798828125,
+    "payment_method": "ecocash",
+    "payment_details": {
+        "phone_number": "+263773956304",
+        "account_name": "Sithembinkosi L Moyo",
+        "instructions": [
+            "Dial *151# on your mobile phone",
+            "Select 'Send Money'",
+            "Select 'To EcoCash Number'",
+            "Enter Phone Number: +263773956304",
+            "Enter the amount shown in your order",
+            "Confirm the transaction",
+            "Send the confirmation message to +27 71 743 2015 on WhatsApp"
+        ]
+    },
+    "notes": "Please note bills settled within 24hrs due to an ever growing and evolving industry.",
+    "paid": false,
+    "paid_date": null,
+    "created_at": "2026-10-05 10:41:37"
+}

@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InvoicingRouteImport } from './routes/invoicing'
+import { Route as PortalRouteImport } from './routes/portal'
+import { Route as PosRouteImport } from './routes/pos'
+import { Route as InvoiceInvoiceIdRouteImport } from './routes/invoice.$invoiceId'
+import { Route as InvoiceShareShareTokenRouteImport } from './routes/invoice.share.$shareToken'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvoicingRoute = InvoicingRouteImport.update({
+  id: '/invoicing',
+  path: '/invoicing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosRoute = PosRouteImport.update({
+  id: '/pos',
+  path: '/pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoiceInvoiceIdRoute = InvoiceInvoiceIdRouteImport.update({
+  id: '/invoice/$invoiceId',
+  path: '/invoice/$invoiceId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoiceShareShareTokenRoute = InvoiceShareShareTokenRouteImport.update({
+  id: '/invoice/share/$shareToken',
+  path: '/invoice/share/$shareToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/invoicing': typeof InvoicingRoute
+  '/portal': typeof PortalRoute
+  '/pos': typeof PosRoute
+  '/invoice/$invoiceId': typeof InvoiceInvoiceIdRoute
+  '/invoice/share/$shareToken': typeof InvoiceShareShareTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/invoicing': typeof InvoicingRoute
+  '/portal': typeof PortalRoute
+  '/pos': typeof PosRoute
+  '/invoice/$invoiceId': typeof InvoiceInvoiceIdRoute
+  '/invoice/share/$shareToken': typeof InvoiceShareShareTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/invoicing': typeof InvoicingRoute
+  '/portal': typeof PortalRoute
+  '/pos': typeof PosRoute
+  '/invoice/$invoiceId': typeof InvoiceInvoiceIdRoute
+  '/invoice/share/$shareToken': typeof InvoiceShareShareTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/invoicing'
+    | '/portal'
+    | '/pos'
+    | '/invoice/$invoiceId'
+    | '/invoice/share/$shareToken'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/invoicing'
+    | '/portal'
+    | '/pos'
+    | '/invoice/$invoiceId'
+    | '/invoice/share/$shareToken'
+  id:
+    | '__root__'
+    | '/'
+    | '/invoicing'
+    | '/portal'
+    | '/pos'
+    | '/invoice/$invoiceId'
+    | '/invoice/share/$shareToken'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InvoicingRoute: typeof InvoicingRoute
+  PortalRoute: typeof PortalRoute
+  PosRoute: typeof PosRoute
+  InvoiceInvoiceIdRoute: typeof InvoiceInvoiceIdRoute
+  InvoiceShareShareTokenRoute: typeof InvoiceShareShareTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invoicing': {
+      id: '/invoicing'
+      path: '/invoicing'
+      fullPath: '/invoicing'
+      preLoaderRoute: typeof InvoicingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos': {
+      id: '/pos'
+      path: '/pos'
+      fullPath: '/pos'
+      preLoaderRoute: typeof PosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoice/$invoiceId': {
+      id: '/invoice/$invoiceId'
+      path: '/invoice/$invoiceId'
+      fullPath: '/invoice/$invoiceId'
+      preLoaderRoute: typeof InvoiceInvoiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoice/share/$shareToken': {
+      id: '/invoice/share/$shareToken'
+      path: '/invoice/share/$shareToken'
+      fullPath: '/invoice/share/$shareToken'
+      preLoaderRoute: typeof InvoiceShareShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InvoicingRoute: InvoicingRoute,
+  PortalRoute: PortalRoute,
+  PosRoute: PosRoute,
+  InvoiceInvoiceIdRoute: InvoiceInvoiceIdRoute,
+  InvoiceShareShareTokenRoute: InvoiceShareShareTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -73,7 +73,7 @@
   --card-foreground: oklch(0.32 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.32 0 0);
-  --primary: oklch(0.70 0.17 55);
+  --primary: oklch(0.7 0.17 55);
   --primary-foreground: oklch(1 0 0);
   --primary-glow: oklch(0.78 0.16 65);
   --secondary: oklch(0.36 0 0);
@@ -86,22 +86,26 @@
   --destructive-foreground: oklch(0.98 0 0);
   --border: oklch(0.91 0.012 70);
   --input: oklch(0.91 0.012 70);
-  --ring: oklch(0.70 0.17 55);
-  --chart-1: oklch(0.70 0.17 55);
+  --ring: oklch(0.7 0.17 55);
+  --chart-1: oklch(0.7 0.17 55);
   --chart-2: oklch(0.36 0 0);
   --chart-3: oklch(0.6 0.118 184.704);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.98 0.005 75);
   --sidebar-foreground: oklch(0.32 0 0);
-  --sidebar-primary: oklch(0.70 0.17 55);
+  --sidebar-primary: oklch(0.7 0.17 55);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.955 0.012 70);
   --sidebar-accent-foreground: oklch(0.32 0 0);
   --sidebar-border: oklch(0.91 0.012 70);
-  --sidebar-ring: oklch(0.70 0.17 55);
+  --sidebar-ring: oklch(0.7 0.17 55);
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
-  --gradient-warm: radial-gradient(ellipse at top right, oklch(0.94 0.06 65 / 0.8), transparent 60%);
+  --gradient-warm: radial-gradient(
+    ellipse at top right,
+    oklch(0.94 0.06 65 / 0.8),
+    transparent 60%
+  );
   --shadow-elegant: 0 20px 50px -20px color-mix(in oklab, var(--primary) 45%, transparent);
   --shadow-card: 0 10px 30px -15px oklch(0.32 0 0 / 0.18);
 }
@@ -153,19 +157,71 @@
   }
 }
 
-@utility bg-gradient-primary { background-image: var(--gradient-primary); }
-@utility bg-gradient-warm { background-image: var(--gradient-warm); }
-@utility shadow-elegant { box-shadow: var(--shadow-elegant); }
-@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility bg-gradient-primary {
+  background-image: var(--gradient-primary);
+}
+@utility bg-gradient-warm {
+  background-image: var(--gradient-warm);
+}
+@utility shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
 @utility bg-grid {
-  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 48px 48px;
 }
-@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-@utility animate-rise { animation: rise 0.8s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes marquee { to { transform: translateX(-50%); } }
-@utility animate-marquee { animation: marquee 30s linear infinite; }
-@keyframes float-y { 50% { transform: translateY(-10px); } }
-@utility animate-float { animation: float-y 6s ease-in-out infinite; }
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 60%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
-@utility animate-pulse-ring { animation: pulse-ring 1.8s ease-out infinite; }
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@utility animate-rise {
+  animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@utility animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+@keyframes float-y {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@utility animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 60%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+@utility animate-pulse-ring {
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not(
+      [type="hidden"]
+    ),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

@@ -1,0 +1,75 @@
+{
+    "paypal": {
+        "email": "billing@codemathphp.co.za",
+        "payment_link": "https://www.paypal.com/paypalme/betadeck",
+        "packages": {
+            "3 Months": {
+                "payment_code": "E8EJHWE92QFSU",
+                "payment_url": "https://www.paypal.com/ncp/payment/E8EJHWE92QFSU",
+                "price": "$8.97"
+            },
+            "1 Year": {
+                "payment_code": "5N85L7XEX79H2",
+                "payment_url": "https://www.paypal.com/ncp/payment/5N85L7XEX79H2",
+                "price": "$29.64"
+            },
+            "2 Years": {
+                "payment_code": "6WUJ6JNSTCSSQ",
+                "payment_url": "https://www.paypal.com/ncp/payment/6WUJ6JNSTCSSQ",
+                "price": "$51.60"
+            },
+            "Lifetime": {
+                "payment_code": "7ZKCL75C57GYS",
+                "payment_url": "https://www.paypal.com/ncp/payment/7ZKCL75C57GYS",
+                "price": "$154.80"
+            }
+        }
+    },
+    "ecocash": {
+        "phone_number": "+263785323166",
+        "account_name": "Lloyd Gutu",
+        "instructions": [
+            "Dial *151# on your mobile phone",
+            "Select 'Send Money'",
+            "Select 'To EcoCash Number'",
+            "Enter Phone Number: +263785323166",
+            "Enter the amount shown in your order",
+            "Confirm the transaction",
+            "Send the confirmation message to +263773956304 on WhatsApp"
+        ]
+    },
+    "innbucks": {
+        "phone_number": "+263785323166",
+        "account_name": "Lloyd Gutu",
+        "instructions": [
+            "Log in to your InnBucks account or dial the USSD code",
+            "Select 'Send Money'",
+            "Enter Phone Number: +263785323166",
+            "Enter the amount shown in your order",
+            "Confirm recipient: BetaDeck Hosting",
+            "Complete the transaction",
+            "Send the confirmation message to +263773956304 on WhatsApp"
+        ]
+    },
+    "bank_transfer": {
+        "bank_name": "First National Bank (FNB/RNB)",
+        "account_name": "Codemathphp (pty) Ltd",
+        "account_number": "63088522602",
+        "branch_code": "250655",
+        "account_type": "Business Cheque Account",
+        "country": "South Africa",
+        "reference": "Use your domain name as reference",
+        "instructions": [
+            "Use the following banking details for your transfer:",
+            "Bank: First National Bank (FNB)",
+            "Account Name: Codemathphp (pty) Ltd",
+            "Account Number: 63088522602",
+            "Branch Code: 250655",
+            "Account Type: Business Cheque Account",
+            "Country: South Africa",
+            "Reference: Your domain name",
+            "After payment, your hosting will automatically activate"
+        ]
+    }
+}
+

@@ -1,0 +1,77 @@
+{
+    "invoice_number": "INV-20261025-3088",
+    "date": "2026-10-25",
+    "client_name": "Shingirai Chirenda",
+    "client_email": "Shingjones@gmail.com",
+    "client_phone": "+27754196361",
+    "items": [
+        {
+            "description": "Company Profile ",
+            "quantity": 1,
+            "price": 45,
+            "total": 45
+        },
+        {
+            "description": "Logo - Corporate Brand Design",
+            "quantity": 1,
+            "price": 17.5,
+            "total": 17.5
+        },
+        {
+            "description": "Custom website ",
+            "quantity": 1,
+            "price": 130,
+            "total": 130
+        },
+        {
+            "description": "Domain Registration ",
+            "quantity": 1,
+            "price": 16,
+            "total": 16
+        },
+        {
+            "description": "Domain Hosting ",
+            "quantity": 3,
+            "price": 2.9900000000000002131628207280300557613372802734375,
+            "total": 8.9700000000000006394884621840901672840118408203125
+        },
+        {
+            "description": "Playstore Submission ",
+            "quantity": 1,
+            "price": 5,
+            "total": 5
+        },
+        {
+            "description": "Process Engineering ",
+            "quantity": 1,
+            "price": 0,
+            "total": 0
+        }
+    ],
+    "subtotal": 222.469999999999998863131622783839702606201171875,
+    "total": 222.469999999999998863131622783839702606201171875,
+    "currency": "$",
+    "currency_code": "USD",
+    "base_currency": "USD",
+    "exchange_rate": 1,
+    "subtotal_zar": 222.469999999999998863131622783839702606201171875,
+    "total_zar": 222.469999999999998863131622783839702606201171875,
+    "payment_method": "ecocash",
+    "payment_details": {
+        "phone_number": "+263785323166",
+        "account_name": "Lloyd Gutu",
+        "instructions": [
+            "Dial *151# on your mobile phone",
+            "Select 'Send Money'",
+            "Select 'To EcoCash Number'",
+            "Enter Phone Number: +263785323166",
+            "Enter the amount shown in your order",
+            "Confirm the transaction",
+            "Send the confirmation message to +263773956304 on WhatsApp"
+        ]
+    },
+    "notes": "Due to ever changing tech enhancement, payments are encouraged to be done as soon as possible within 24-48hrs. Kindly note for current project, production timeline is within 3-5days. To kick start production a deposit of 40% of the total amount is required.",
+    "paid": false,
+    "paid_date": null,
+    "created_at": "2026-10-25 21:54:08"
+}

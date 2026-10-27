@@ -1,0 +1,41 @@
+{
+    "invoice_number": "INV-20260216-9965",
+    "date": "2026-02-16",
+    "client_name": "Lloyd Gutu",
+    "client_email": "codemathphp@gmail.com",
+    "client_phone": "+26771537102",
+    "items": [
+        {
+            "description": "Full Service App (Discounted) - Development and Design Of Working Process",
+            "quantity": 1,
+            "price": 120,
+            "total": 120
+        }
+    ],
+    "subtotal": 120,
+    "total": 120,
+    "currency": "$",
+    "currency_code": "USD",
+    "base_currency": "USD",
+    "exchange_rate": 1,
+    "subtotal_zar": 120,
+    "total_zar": 120,
+    "payment_method": "ecocash",
+    "payment_details": {
+        "phone_number": "+263773956304",
+        "account_name": "Sithembinkosi L Moyo",
+        "instructions": [
+            "Dial *151# on your mobile phone",
+            "Select 'Send Money'",
+            "Select 'To EcoCash Number'",
+            "Enter Phone Number: +263773956304",
+            "Enter the amount shown in your order",
+            "Confirm the transaction",
+            "Send the confirmation message to +27 71 743 2015 on WhatsApp"
+        ]
+    },
+    "notes": "",
+    "paid": true,
+    "paid_date": "2026-02-18 18:16:23",
+    "created_at": "2026-02-16 09:23:23"
+}

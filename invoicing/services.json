@@ -1,0 +1,161 @@
+{
+    "services": [
+        {
+            "id": 1,
+            "name": "Domain Registration",
+            "description": "Domain name registration (1 year)",
+            "price": 12.50,
+            "category": "Domains"
+        },
+        {
+            "id": 2,
+            "name": "Domain Renewal",
+            "description": "Domain name renewal (1 year)",
+            "price": 12.50,
+            "category": "Domains"
+        },
+        {
+            "id": 4,
+            "name": "Monthly Hosting",
+            "description": "Monthly hosting subscription",
+            "price": 3.80,
+            "category": "Hosting"
+        },
+        {
+            "id": 5,
+            "name": "SSL Certificate",
+            "description": "SSL certificate installation and setup",
+            "price": 8.00,
+            "category": "Security"
+        },
+        {
+            "id": 6,
+            "name": "Email Account Setup",
+            "description": "Professional email account setup",
+            "price": 2.00,
+            "category": "Email"
+        },
+        {
+            "id": 7,
+            "name": "Website Migration",
+            "description": "Website migration from another host",
+            "price": 15.00,
+            "category": "Services"
+        },
+        {
+            "id": 8,
+            "name": "Backup Service",
+            "description": "Monthly backup service",
+            "price": 4.50,
+            "category": "Services"
+        },
+        {
+            "id": 9,
+            "name": "Website Maintenance",
+            "description": "Monthly website maintenance and updates",
+            "price": 15.87,
+            "category": "Services"
+        },
+        {
+            "id": 10,
+            "name": "Database Setup",
+            "description": "MySQL database creation and configuration",
+            "price": 22.00,
+            "category": "Hosting"
+        },
+        {
+            "id": 11,
+            "name": "BetaDeck License - Monthly",
+            "description": "BetaDeck platform monthly license",
+            "price": 49.00,
+            "category": "Licenses"
+        },
+        {
+            "id": 12,
+            "name": "Custom Development",
+            "description": "Custom development work (per hour)",
+            "price": 800.00,
+            "category": "Development"
+        },
+        {
+            "id": 13,
+            "name": "Consultation",
+            "description": "Technical consultation (per hour)",
+            "price": 255.00,
+            "category": "Services"
+        },
+        {
+            "id": 14,
+            "name": "Full Package Special",
+            "description": "Technical consultation (per hour)",
+            "price": 980.00,
+            "category": "Services"
+        },
+        {
+            "id": 15,
+            "name": "Website -Special Package",
+            "description": "Full Custom Website",
+            "price": 0.00,
+            "category": "Services"
+        },
+        {
+            "id": 16,
+            "name": "Lifetime Hosting -Special Package",
+            "description": "Minimum 15Year Hosting",
+            "price": 0.00,
+            "category": "Services"
+        },        
+        {
+            "id": 17,
+            "name": "Web-Dev",
+            "description": "Custom Web Application Development",
+            "price": 15000.00,
+            "category": "Services"
+        }
+        ,        
+        {
+            "id": 18,
+            "name": "Full Service App (Discounted)",
+            "description": "Custom API Development (From 7500.00 - 24000.00)",
+            "price": 8000,
+            "category": "Services"
+        },        
+        {
+            "id": 19,
+            "name": "Company Profile",
+            "description": "Professional Company Profile",
+            "price": 450.00,
+            "category": "Services"
+        }
+        ,        
+        {
+            "id": 20,
+            "name": "Flyer / Poster",
+            "description": "Professional Graphic Design",
+            "price": 10.00,
+            "category": "Services"
+        },        
+        {
+            "id": 21,
+            "name": "Email Signature",
+            "description": "Pro Graphic Design ",
+            "price": 7.00,
+            "category": "Services"
+        },
+        {
+            "id": 22,
+            "name": "Logo",
+            "description": "Corporate Brand Design",
+            "price": 17.50,
+            "category": "Services"
+        },
+        {
+            "id": 23,
+            "name": "Letterhead",
+            "description": "Edit Friendly Company Letterhead (Graphic Design)",
+            "price": 8.00,
+            "category": "Services"
+        }
+    ]
+}
+

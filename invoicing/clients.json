@@ -1,0 +1,36 @@
+{
+    "clients": [
+        {
+            "id": 1,
+            "name": "Pluc South Africa",
+            "email": "ndivhuwovhuatsha@gmail.com",
+            "phone": "+27670244776",
+            "company": "Pluc South Africa",
+            "notes": "Regular Codemath Services Client"
+        },
+        {
+            "id": 2,
+            "name": "Laughtorison",
+            "email": "info@laughtorison.co.za",
+            "phone": "+27670244776",
+            "company": "Laughtorison",
+            "notes": "Prefers email and whatsapp invoices"
+        },
+        {
+            "id": 3,
+            "name": "Mat oNe Printz",
+            "email": "gersonmbvu@yahoo.co.uk",
+            "phone": "+26771537102",
+            "company": "Mat oNe Printz",
+            "notes": "Printing company"
+        },
+        {
+            "id": 4,
+            "name": "Isimilo investment",
+            "email": "isimiloinvestments@gmail.com",
+            "phone": "+263772599690",
+            "company": "Isimilo",
+            "notes": "Regular client"
+        }
+    ]
+}

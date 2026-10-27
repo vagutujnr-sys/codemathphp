@@ -1,0 +1,11 @@
+{
+    "base_currency": "USD",
+    "last_updated": "2026-01-01",
+    "rates": {
+        "USD": 1,
+        "ZAR": 18.75
+    },
+    "auto_update": false,
+    "note": "Update exchange rates regularly. Rates are relative to USD (United States Dollars)."
+}
+
