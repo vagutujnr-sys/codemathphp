@@ -176,6 +176,11 @@ type StoredSession = SupabaseSession & {
 };
 
 const SESSION_KEY = "codemath-invoicing-session";
+const REFRESH_LOCK_NAME = "codemath-invoicing-session-refresh";
+const REFRESH_EARLY_MS = 60_000;
+let refreshPromise: Promise<StoredSession> | undefined;
+let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+let realtimeClientInstance: ReturnType<typeof createClient> | undefined;
 
 function configuration() {
   const url = import.meta.env["VITE_SUPABASE_URL"]?.replace(/\/$/, "");
@@ -189,7 +194,7 @@ function configuration() {
 }
 
 function storedSession(): StoredSession | null {
-  const value = sessionStorage.getItem(SESSION_KEY);
+  const value = localStorage.getItem(SESSION_KEY) ?? sessionStorage.getItem(SESSION_KEY);
   if (!value) return null;
   try {
     const session = JSON.parse(value) as Partial<StoredSession>;
@@ -202,16 +207,154 @@ function storedSession(): StoredSession | null {
     ) {
       throw new Error("Stored session data is incomplete.");
     }
-    return session as StoredSession;
+    const stored = session as StoredSession;
+    if (!localStorage.getItem(SESSION_KEY)) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(stored));
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+    return stored;
   } catch (error) {
+    localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
     console.error("Unable to read the invoicing session.", error);
     return null;
   }
 }
 
+function saveSession(session: SupabaseSession): StoredSession {
+  const stored = { ...session, acquired_at: Date.now() };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(stored));
+  sessionStorage.removeItem(SESSION_KEY);
+  scheduleSessionRefresh(stored);
+  return stored;
+}
+
+function clearSession(notify = false) {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = undefined;
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+  if (notify) window.dispatchEvent(new Event("codemath-session-ended"));
+}
+
+function scheduleSessionRefresh(session: StoredSession) {
+  if (typeof window === "undefined") return;
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const refreshIn = Math.max(
+    1_000,
+    session.acquired_at + session.expires_in * 1000 - Date.now() - REFRESH_EARLY_MS,
+  );
+  refreshTimer = setTimeout(() => {
+    void validSession().catch((error: unknown) => {
+      console.error("Unable to refresh the invoicing session in the background.", error);
+      retrySessionRefresh();
+    });
+  }, refreshIn);
+}
+
+function retrySessionRefresh() {
+  const session = storedSession();
+  if (!session) return;
+  refreshTimer = setTimeout(() => {
+    void validSession().catch((error: unknown) => {
+      console.error("Unable to refresh the invoicing session in the background.", error);
+      retrySessionRefresh();
+    });
+  }, 30_000);
+}
+
+async function refreshStoredSession(): Promise<StoredSession> {
+  const session = storedSession();
+  if (!session) throw new Error("Your session has ended. Sign in again.");
+  if (Date.now() < session.acquired_at + session.expires_in * 1000 - REFRESH_EARLY_MS) {
+    return session;
+  }
+
+  const { url, anonKey } = configuration();
+  const response = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: anonKey },
+    body: JSON.stringify({ refresh_token: session.refresh_token }),
+  });
+  if (!response.ok) {
+    const detail = (await response.json().catch(() => null)) as {
+      error?: string;
+      error_description?: string;
+      msg?: string;
+      message?: string;
+    } | null;
+    if (response.status === 400 || response.status === 401) {
+      clearSession(true);
+      throw new Error("Your session has expired. Sign in again.");
+    }
+    throw new Error(
+      detail?.error_description ??
+        detail?.msg ??
+        detail?.error ??
+        detail?.message ??
+        "Unable to refresh your session. Check your connection and try again.",
+    );
+  }
+
+  const refreshed = (await response.json()) as SupabaseSession;
+  if (
+    typeof refreshed.access_token !== "string" ||
+    typeof refreshed.refresh_token !== "string" ||
+    typeof refreshed.expires_in !== "number" ||
+    typeof refreshed.user?.id !== "string"
+  ) {
+    throw new Error("Supabase returned an invalid refreshed session.");
+  }
+  const latest = storedSession();
+  if (!latest) throw new Error("Your session has ended. Sign in again.");
+  if (latest.user.id !== session.user.id) {
+    throw new Error("The signed-in account changed. Please try your request again.");
+  }
+  if (latest.refresh_token !== session.refresh_token) {
+    if (realtimeClientInstance) {
+      await realtimeClientInstance.realtime.setAuth(latest.access_token);
+    }
+    return latest;
+  }
+  const saved = saveSession(refreshed);
+  if (realtimeClientInstance) {
+    await realtimeClientInstance.realtime.setAuth(saved.access_token);
+  }
+  return saved;
+}
+
+async function validSession(): Promise<StoredSession> {
+  const session = storedSession();
+  if (!session) throw new Error("Your session has ended. Sign in again.");
+  if (Date.now() < session.acquired_at + session.expires_in * 1000 - REFRESH_EARLY_MS) {
+    scheduleSessionRefresh(session);
+    return session;
+  }
+  if (!refreshPromise) {
+    const refresh = () => refreshStoredSession();
+    refreshPromise =
+      typeof navigator !== "undefined" && navigator.locks
+        ? navigator.locks.request(REFRESH_LOCK_NAME, refresh)
+        : refresh();
+    void refreshPromise.then(
+      () => {
+        refreshPromise = undefined;
+      },
+      () => {
+        refreshPromise = undefined;
+      },
+    );
+  }
+  return refreshPromise.then((refreshed) => {
+    scheduleSessionRefresh(refreshed);
+    return refreshed;
+  });
+}
+
 export function currentSession() {
-  return storedSession();
+  const session = storedSession();
+  if (session) scheduleSessionRefresh(session);
+  return session;
 }
 
 export async function loginWithPin(pin: string): Promise<void> {
@@ -226,40 +369,49 @@ export async function loginWithPin(pin: string): Promise<void> {
   if (!response.ok || !result.session) {
     throw new Error(result.error ?? "Unable to sign in. Check the PIN and try again.");
   }
-  sessionStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({ ...result.session, acquired_at: Date.now() }),
-  );
+  saveSession(result.session);
 }
 
 export function logout() {
-  sessionStorage.removeItem(SESSION_KEY);
+  clearSession();
 }
 
 function realtimeClient() {
+  if (realtimeClientInstance) return realtimeClientInstance;
   const { url, anonKey } = configuration();
-  return createClient(url, anonKey, {
+  realtimeClientInstance = createClient(url, anonKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
     accessToken: async () => {
-      const session = storedSession();
-      if (!session) throw new Error("Your session has ended. Sign in again.");
+      const session = await validSession();
       return session.access_token;
     },
   });
+  window.addEventListener("storage", (event) => {
+    if (event.key !== SESSION_KEY) return;
+    if (!event.newValue) {
+      window.dispatchEvent(new Event("codemath-session-ended"));
+      return;
+    }
+    const updated = JSON.parse(event.newValue) as Partial<StoredSession>;
+    const previous = event.oldValue ? (JSON.parse(event.oldValue) as Partial<StoredSession>) : null;
+    if (previous?.user?.id && updated.user?.id && previous.user.id !== updated.user.id) {
+      window.dispatchEvent(new Event("codemath-session-ended"));
+      return;
+    }
+    if (typeof updated.access_token === "string") {
+      void realtimeClientInstance?.realtime.setAuth(updated.access_token);
+    }
+  });
+  return realtimeClientInstance;
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { url, anonKey } = configuration();
-  const session = storedSession();
-  if (!session) throw new Error("Your session has ended. Sign in again.");
-  if (Date.now() >= session.acquired_at + session.expires_in * 1000) {
-    logout();
-    throw new Error("Your session has expired. Sign in again.");
-  }
+  const session = await validSession();
 
   const response = await fetch(`${url}/rest/v1/${path}`, {
     ...init,
@@ -280,12 +432,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export async function getCurrentUser(): Promise<InvoicingUser> {
   const { url, anonKey } = configuration();
-  const session = storedSession();
-  if (!session) throw new Error("Sign in to continue.");
-  if (Date.now() >= session.acquired_at + session.expires_in * 1000) {
-    logout();
-    throw new Error("Your session has expired. Sign in again.");
-  }
+  const session = await validSession();
   const response = await fetch(
     `${url}/rest/v1/profiles?id=eq.${session.user.id}&select=id,display_name,role,client_id`,
     {
@@ -355,9 +502,8 @@ export const api = {
       })),
     );
   },
-  sendChatMessage: (clientId: string, content: string, replyToId: string | null = null) => {
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+  sendChatMessage: async (clientId: string, content: string, replyToId: string | null = null) => {
+    const session = await validSession();
     return request<ClientMessage[]>("client_messages", {
       method: "POST",
       headers: { Prefer: "return=representation" },
@@ -375,8 +521,7 @@ export const api = {
     content = "",
     replyToId: string | null = null,
   ) => {
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     if (!/^(image|audio|video)\//.test(file.type)) {
       throw new Error("Choose an image, audio recording, or video file.");
     }
@@ -435,8 +580,7 @@ export const api = {
   },
   chatAttachmentUrl: async (path: string) => {
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const encodedPath = path.split("/").map(encodeURIComponent).join("/");
     const response = await fetch(`${url}/storage/v1/object/sign/client-chat-media/${encodedPath}`, {
       method: "POST",
@@ -495,8 +639,7 @@ export const api = {
     };
   },
   markChatMessagesRead: async (clientId: string) => {
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const query = new URLSearchParams({
       client_id: `eq.${clientId}`,
       sender_id: `neq.${session.user.id}`,
@@ -666,8 +809,7 @@ export const api = {
   },
   uploadProjectUpdateImage: async (clientId: string, updateId: string, file: File) => {
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const filename = `${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
     const path = `${clientId}/${updateId}/${filename}`;
     const encodedPath = path.split("/").map(encodeURIComponent).join("/");
@@ -689,8 +831,7 @@ export const api = {
   },
   projectUpdateImageUrl: async (path: string) => {
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const encodedPath = path.split("/").map(encodeURIComponent).join("/");
     const response = await fetch(`${url}/storage/v1/object/sign/project-progress/${encodedPath}`, {
       method: "POST",
@@ -713,8 +854,7 @@ export const api = {
   deleteProjectUpdateImages: async (paths: string[]) => {
     if (!paths.length) return;
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const response = await fetch(`${url}/storage/v1/object/project-progress`, {
       method: "DELETE",
       headers: {
@@ -776,8 +916,7 @@ export const api = {
   ) => {
     if (!/^\d{6}$/.test(pin)) throw new Error("Enter a six-digit PIN for this client.");
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const response = await fetch(`${url}/functions/v1/manage-pin-user`, {
       method: "POST",
       headers: {
@@ -797,8 +936,7 @@ export const api = {
     if (!/^\d{6}$/.test(pin)) throw new Error("Enter a six-digit PIN for this staff account.");
     if (!displayName.trim()) throw new Error("Enter a staff name.");
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const response = await fetch(`${url}/functions/v1/manage-pin-user`, {
       method: "POST",
       headers: {
@@ -817,8 +955,7 @@ export const api = {
   resetClientPin: async (clientId: string, pin: string) => {
     if (!/^\d{6}$/.test(pin)) throw new Error("Enter a new six-digit PIN.");
     const { url, anonKey } = configuration();
-    const session = storedSession();
-    if (!session) throw new Error("Your session has ended. Sign in again.");
+    const session = await validSession();
     const response = await fetch(`${url}/functions/v1/manage-pin-user`, {
       method: "POST",
       headers: {

@@ -61,6 +61,8 @@ The new React workspace is served at `/invoicing`. It replaces the non-functiona
 
 Six-digit PINs are intentionally a convenience credential, not strong authentication. They are permanent and guessable, so the login function limits repeated attempts. Do not reuse these PINs for email, banking or other accounts, and do not store highly sensitive documents in the client area.
 
+Invoicing, client, and clerk sessions are stored in the browser so sign-in survives closing and reopening the browser. The app refreshes Supabase access tokens automatically; users remain signed in until they log out, their account is disabled, or Supabase's session policy/revocation ends the session. Log out on shared devices.
+
 ## Import the existing PHP system
 
 The one-time importer reads the old JSON files locally and sends their records directly to Supabase. It does not print invoice or client details. First run the database migration, then use a local shell with the service-role key **only in its environment**:

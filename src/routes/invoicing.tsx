@@ -513,6 +513,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
   const [user, setUser] = useState<InvoicingUser | null>(null);
   const [pin, setPin] = useState("");
   const [checkingSession, setCheckingSession] = useState(true);
+  const [savedSessionNeedsRetry, setSavedSessionNeedsRetry] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const setNotice = useCallback((message: string) => {
@@ -578,6 +579,20 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
     }
   }, []);
 
+  const signOut = useCallback(() => {
+    logout();
+    setUser(null);
+    setSavedSessionNeedsRetry(false);
+    setClients([]);
+    setInvoices([]);
+    setProjects([]);
+    setUpdates([]);
+    setResources([]);
+    setPerformance([]);
+    setTab("overview");
+    setError("");
+  }, []);
+
   useEffect(() => {
     if (!user || !browserNotificationsSupported()) return;
     return api.subscribeToActivity(
@@ -593,17 +608,24 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
       setCheckingSession(false);
       return;
     }
+    setSavedSessionNeedsRetry(true);
     getCurrentUser()
       .then((account) => {
         setUser(account);
+        setSavedSessionNeedsRetry(false);
         void loadData(account);
       })
       .catch((cause: unknown) => {
-        logout();
         setError(cause instanceof Error ? cause.message : "Unable to validate your session.");
       })
       .finally(() => setCheckingSession(false));
   }, [loadData]);
+
+  useEffect(() => {
+    const handleSessionEnded = () => signOut();
+    window.addEventListener("codemath-session-ended", handleSessionEnded);
+    return () => window.removeEventListener("codemath-session-ended", handleSessionEnded);
+  }, [signOut]);
 
   useEffect(() => {
     if (user?.role === "clerk" && entryMode !== "pos") {
@@ -648,6 +670,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
       await loginWithPin(pin);
       const account = await getCurrentUser();
       setUser(account);
+      setSavedSessionNeedsRetry(false);
       setPin("");
       await loadData(account);
     } catch (cause) {
@@ -658,17 +681,19 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
     }
   }
 
-  function signOut() {
-    logout();
-    setUser(null);
-    setClients([]);
-    setInvoices([]);
-    setProjects([]);
-    setUpdates([]);
-    setResources([]);
-    setPerformance([]);
-    setTab("overview");
+  async function retrySavedSession() {
     setError("");
+    setCheckingSession(true);
+    try {
+      const account = await getCurrentUser();
+      setUser(account);
+      setSavedSessionNeedsRetry(false);
+      await loadData(account);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to restore your saved session.");
+    } finally {
+      setCheckingSession(false);
+    }
   }
 
   async function copyInvoiceLink(invoice: Invoice) {
@@ -710,7 +735,37 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
               ? "Sign in with your staff PIN to create invoices."
               : "Administrators manage the business. Clients can view their own workspace, invoices and receipts."}
           </p>
-          {!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
+          {savedSessionNeedsRetry ? (
+            <div className="mt-5 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Your saved sign-in is still on this device, but we couldn’t reconnect to Supabase.
+                Check your connection and try again.
+              </p>
+              {error && (
+                <p
+                  role="alert"
+                  className="border-l-4 border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                >
+                  {error}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={checkingSession}
+                onClick={() => void retrySavedSession()}
+                className="flex h-10 w-full items-center justify-center rounded-sm bg-gradient-primary text-sm font-bold text-primary-foreground disabled:opacity-60"
+              >
+                Try reconnecting
+              </button>
+              <button
+                type="button"
+                onClick={signOut}
+                className="w-full text-sm font-semibold text-muted-foreground hover:underline"
+              >
+                Sign out and use another account
+              </button>
+            </div>
+          ) : !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY ? (
             <div className="mt-6 border-l-4 border-primary bg-accent px-4 py-3 text-sm text-accent-foreground">
               Supabase is not configured yet. Add <code>VITE_SUPABASE_URL</code> and{" "}
               <code>VITE_SUPABASE_ANON_KEY</code>, then apply the invoicing migration and deploy its
@@ -919,10 +974,18 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
   return (
     <div className="min-h-screen bg-muted/50 text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div
+          className={`mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:px-6 ${
+            user.role === "client" ? "w-full lg:max-w-7xl" : "max-w-7xl"
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <img src={logo} alt="CodeMath" className="h-10 w-auto object-contain" />
-            <div>
+            <img
+              src={logo}
+              alt="CodeMath"
+              className={`w-auto object-contain ${user.role === "client" ? "h-12 sm:h-14" : "h-10"}`}
+            />
+            <div className={user.role === "client" ? "hidden" : ""}>
               <p className="text-xs capitalize text-muted-foreground">{user.role} area</p>
             </div>
           </div>
@@ -939,9 +1002,40 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
           </div>
         </div>
       </header>
+      {user.role === "client" && (
+        <section
+          aria-label="Client account summary"
+          className="bg-primary px-4 py-3 text-primary-foreground lg:hidden"
+        >
+          <p className="mx-auto w-fit rounded-full bg-secondary px-6 py-2 text-center font-display text-lg font-semibold text-secondary-foreground">
+            {user.display_name}
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-3 text-sm font-medium">
+            {[
+              { label: "Projects", count: projects.length, tab: "workspace" as const },
+              { label: "Updates", count: updates.length, tab: "workspace" as const },
+              { label: "Invoices", count: invoices.length, tab: "invoices" as const },
+            ].map(({ label, count, tab: targetTab }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setTab(targetTab)}
+                className="inline-flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-secondary px-2 text-xs font-bold text-secondary-foreground">
+                  {count}
+                </span>
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
       <div
         className={`mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] ${
-          user.role === "client" ? "pb-24 lg:pb-6" : ""
+          user.role === "client"
+            ? "w-full gap-0 px-0 py-0 pb-24 sm:px-0 lg:gap-6 lg:px-6 lg:py-6"
+            : ""
         }`}
       >
         <nav
@@ -979,8 +1073,12 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
             <Activity className="h-4 w-4" /> Refresh data
           </button>
         </nav>
-        <main className="min-w-0">
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <main className={`min-w-0 ${user.role === "client" ? "w-full" : ""}`}>
+          <div
+            className={`mb-5 flex flex-wrap items-end justify-between gap-3 ${
+              user.role === "client" ? "hidden lg:flex" : ""
+            }`}
+          >
             <div>
               <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                 {isAdmin ? "Administration" : "Client portal"}
@@ -991,7 +1089,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
             </div>
             {loading && <span className="text-sm text-muted-foreground">Syncing…</span>}
           </div>
-          <div className="mb-4 flex justify-end">
+          <div className={`mb-4 flex justify-end ${user.role === "client" ? "hidden lg:flex" : ""}`}>
             <NotificationPermissionButton />
           </div>
           {error && (
@@ -1136,7 +1234,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
           aria-label="Client navigation"
           className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
         >
-          <div className="mx-auto flex max-w-lg items-center justify-around">
+          <div className="mx-auto flex w-full max-w-lg items-center justify-around">
             {menu.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -1148,7 +1246,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
                   setTab(id);
                   setError("");
                 }}
-                className={`flex h-11 w-12 items-center justify-center rounded-xl transition-colors ${
+                className={`flex h-14 w-14 items-center justify-center rounded-xl transition-colors ${
                   tab === id
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-secondary"
@@ -1373,6 +1471,7 @@ function ClientOverview({
   resources: SharedResource[];
   onNavigate: (tab: Tab) => void;
 }) {
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const openInvoices = invoices.filter((invoice) =>
     ["pending", "sent", "partial", "overdue"].includes(invoice.status),
   );
@@ -1380,56 +1479,176 @@ function ClientOverview({
     Math.max(invoice.total - invoice.paid_total, 0),
   );
   return (
-    <div className="space-y-6">
-      <section className="flex flex-wrap items-center gap-x-6 gap-y-2 border border-border bg-card px-4 py-3 text-sm">
-        <p className="font-semibold text-secondary">Welcome, {user.display_name}</p>
-        <span className="text-muted-foreground">{projects.length} projects</span>
-        <span className="text-muted-foreground">
-          {invoices.length} invoices ·{" "}
-          {invoices.filter((invoice) => invoice.status === "paid").length} paid
-        </span>
-        <span className="text-muted-foreground">Outstanding: {outstanding}</span>
-      </section>
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="border border-border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display font-bold text-secondary">Your projects</h2>
+    <div>
+      <div className="space-y-0 lg:hidden">
+        <section className="border-b border-border bg-muted px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-xl font-bold text-secondary">My Projects</h2>
             <button
-              onClick={() => onNavigate("workspace")}
-              className="text-sm font-semibold text-primary"
-            >
-              Open workspace
-            </button>
-          </div>
-          <ProjectCards projects={projects.slice(0, 3)} />
-        </div>
-        <div className="border border-border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display font-bold text-secondary">Latest updates</h2>
-            <button
+              type="button"
               onClick={() => onNavigate("workspace")}
               className="text-sm font-semibold text-primary"
             >
               View all
             </button>
           </div>
-          <UpdateList updates={updates.slice(0, 3)} projects={projects} />
+        </section>
+        {projects.length ? (
+          <section aria-label="My projects" className="space-y-0">
+            {projects.map((project) => {
+              const projectUpdates = updates.filter((update) => update.project_id === project.id);
+              const expanded = expandedProject === project.id;
+              return (
+                <article
+                  key={project.id}
+                  className="border-b border-border bg-card px-5 py-5"
+                >
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1">
+                    <h3 className="font-display text-lg font-bold leading-tight text-secondary">
+                      {project.name}
+                    </h3>
+                    <span className="row-span-3 font-display text-4xl font-extrabold tabular-nums text-primary">
+                      {project.progress}%
+                    </span>
+                    <p className="text-sm capitalize text-muted-foreground">
+                      {project.status.replaceAll("_", " ")}
+                    </p>
+                    <div className="col-start-1 mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full bg-primary"
+                        style={{ width: `${Math.min(Math.max(project.progress, 0), 100)}%` }}
+                      />
+                    </div>
+                    <p className="col-start-1 mt-1 text-sm font-semibold text-secondary">
+                      {projectUpdates.length} update{projectUpdates.length === 1 ? "" : "s"} shared
+                    </p>
+                    <p className="col-start-2 row-start-4 text-right text-xs text-muted-foreground">
+                      Updated {project.updated_at.slice(0, 10)}
+                    </p>
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      onClick={() => setExpandedProject(expanded ? null : project.id)}
+                      className="col-start-1 mt-3 w-fit rounded-full border border-primary bg-gradient-primary px-5 py-2 text-xs font-semibold text-primary-foreground"
+                    >
+                      {expanded ? "Show Less" : "Expand To View"}
+                    </button>
+                  </div>
+                  {expanded && (
+                    <div className="mt-4 border-t border-border pt-4">
+                      {project.summary && (
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {project.summary}
+                        </p>
+                      )}
+                      {projectUpdates.length > 0 && (
+                        <ul className="mt-3 space-y-2">
+                          {projectUpdates.map((update) => (
+                            <li key={update.id} className="text-sm">
+                              <p className="font-semibold text-secondary">{update.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {update.created_at.slice(0, 10)}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        ) : (
+          <div className="bg-card px-5 py-8 text-sm text-muted-foreground">
+            There are no projects in this workspace yet.
+          </div>
+        )}
+        <section className="bg-muted px-5 pb-24 pt-6">
+          <h2 className="font-display text-xl font-bold text-secondary">Completed Milestones</h2>
+          <p className="text-sm text-secondary">Project Updates In Pictures</p>
+          {updates.some((update) => update.screenshot_urls?.length) ? (
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {updates.flatMap((update) =>
+                (update.screenshot_urls ?? []).map((url, index) => (
+                  <a
+                    key={`${update.id}-${index}`}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="overflow-hidden border border-border bg-card"
+                  >
+                    <img
+                      src={url}
+                      alt={`${update.title} progress update`}
+                      loading="lazy"
+                      className="aspect-square w-full object-cover"
+                    />
+                    <span className="block truncate px-2 py-2 text-xs font-semibold text-secondary">
+                      {update.title}
+                    </span>
+                  </a>
+                )),
+              )}
+            </div>
+          ) : (
+            <div className="flex min-h-[300px] items-center justify-center text-center text-sm text-secondary">
+              No Visual Updates Available
+            </div>
+          )}
+        </section>
+      </div>
+      <div className="hidden space-y-6 lg:block">
+        <section className="flex flex-wrap items-center gap-x-6 gap-y-2 border border-border bg-card px-4 py-3 text-sm">
+          <p className="font-semibold text-secondary">Welcome, {user.display_name}</p>
+          <span className="text-muted-foreground">{projects.length} projects</span>
+          <span className="text-muted-foreground">
+            {invoices.length} invoices ·{" "}
+            {invoices.filter((invoice) => invoice.status === "paid").length} paid
+          </span>
+          <span className="text-muted-foreground">Outstanding: {outstanding}</span>
+        </section>
+        <section className="grid gap-6 xl:grid-cols-2">
+          <div className="border border-border bg-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display font-bold text-secondary">Your projects</h2>
+              <button
+                onClick={() => onNavigate("workspace")}
+                className="text-sm font-semibold text-primary"
+              >
+                Open workspace
+              </button>
+            </div>
+            <ProjectCards projects={projects.slice(0, 3)} />
+          </div>
+          <div className="border border-border bg-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display font-bold text-secondary">Latest updates</h2>
+              <button
+                onClick={() => onNavigate("workspace")}
+                className="text-sm font-semibold text-primary"
+              >
+                View all
+              </button>
+            </div>
+            <UpdateList updates={updates.slice(0, 3)} projects={projects} />
+          </div>
+        </section>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => onNavigate("invoices")}
+            className="inline-flex items-center gap-2 bg-gradient-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+          >
+            <FileText className="h-4 w-4" /> View invoices and receipts
+          </button>
+          <button
+            onClick={() => onNavigate("workspace")}
+            className="inline-flex items-center gap-2 border border-border bg-card px-4 py-3 text-sm font-bold text-secondary"
+          >
+            <ArrowDownToLine className="h-4 w-4" /> {resources.length} shared resource
+            {resources.length === 1 ? "" : "s"}
+          </button>
         </div>
-      </section>
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={() => onNavigate("invoices")}
-          className="inline-flex items-center gap-2 bg-gradient-primary px-4 py-3 text-sm font-bold text-primary-foreground"
-        >
-          <FileText className="h-4 w-4" /> View invoices and receipts
-        </button>
-        <button
-          onClick={() => onNavigate("workspace")}
-          className="inline-flex items-center gap-2 border border-border bg-card px-4 py-3 text-sm font-bold text-secondary"
-        >
-          <ArrowDownToLine className="h-4 w-4" /> {resources.length} shared resource
-          {resources.length === 1 ? "" : "s"}
-        </button>
       </div>
     </div>
   );
