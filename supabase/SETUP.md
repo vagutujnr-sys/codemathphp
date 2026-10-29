@@ -15,10 +15,10 @@ The new React workspace is served at `/invoicing`. It replaces the non-functiona
 3. Set the Edge Function secrets. Use independently generated, high-entropy values for the three secrets and keep `PIN_FINGERPRINT_SECRET` stable: changing it without re-fingerprinting existing accounts would break duplicate-PIN detection.
 
    ```text
-   supabase secrets set PIN_RATE_LIMIT_SECRET=... PIN_FINGERPRINT_SECRET=... PIN_ADMIN_BOOTSTRAP_SECRET=... PIN_LOGIN_ALLOWED_ORIGINS=https://codemathphp-website.vercel.app,https://codemathphp.co.za,http://localhost:3000,http://localhost:5173
+   supabase secrets set PIN_RATE_LIMIT_SECRET=... PIN_FINGERPRINT_SECRET=... PIN_ADMIN_BOOTSTRAP_SECRET=... PIN_LOGIN_ALLOWED_ORIGINS=https://codemathphp-website.vercel.app,https://codemathphp.co.za,https://www.codemathphp.co.za,http://localhost:3000,http://localhost:5173
    ```
 
-   `PIN_LOGIN_ALLOWED_ORIGINS` adds origins to the built-in Vercel, production-domain, and localhost allowlist and is used by both PIN sign-in and account-management functions. Add any other deployed app origins here, comma-separated, then redeploy both functions. For local-network testing, include the development computer's current origin (currently `http://172.20.10.14:5173`); update it if the computer's LAN address changes.
+   `PIN_LOGIN_ALLOWED_ORIGINS` adds origins to the built-in Vercel, production-domain, and localhost allowlist and is used by both PIN sign-in and account-management functions. The apex domain redirects to `www`, so both origins are included. Add any other deployed app origins here, comma-separated, then redeploy both functions. For local-network testing, include the development computer's current origin (currently `http://172.20.10.14:5173`); update it if the computer's LAN address changes.
 
 4. Deploy both functions:
 
@@ -50,7 +50,7 @@ The new React workspace is served at `/invoicing`. It replaces the non-functiona
 - Invoice settings let admins add and configure payment methods, instructions for each method, and independent special notes. Only active methods are offered in the POS; the selected method's instructions appear on the private and public invoice views.
 - Staff can share tokenized public invoice links; clients can view and print/save their invoices without signing in. The share token grants access to the invoice, so share it only with its intended recipient.
 - Invoice status management, partial/full payment recording, unique numbered receipts and browser printing.
-- Client portal with its own invoices/receipts, projects, progress, updates and shared links/resources.
+- Client portal with its own invoices/receipts, projects, milestone deliverables, progress, updates and shared links/resources. Administrators plan milestones with descriptions and target dates; progress and project completion update from completed deliverables, which clients can track in their workspace.
 - Admins and clients can use private, real-time chat with image, audio, and video attachments (up to 50 MB), recorded voice notes, swipe-to-reply, and read receipts. The chat has an immersive, mobile-friendly conversation view and supports voice-only WebRTC calls; clients can access only their own conversation and administrators can switch between client conversations. Voice calls require HTTPS, microphone permission, and Realtime signaling policies from the chat media/voice-call migration. A TURN service may be needed for calls across restrictive networks.
 - In-app activity notifications use browser system notifications while the workspace is open on a secure HTTPS origin (localhost is also supported). Users must enable notification permission in the workspace or chat conversation area. Incoming messages, client invoices/payments, and project updates are announced through Supabase Realtime; the activity-notifications migration adds the required tables to the Realtime publication. These are not Web Push notifications and do not arrive after the app/browser is closed.
 - Admins can attach up to five private progress screenshots (up to 10 MB each) to a project update; signed image links are available only to the assigned client and administrators.

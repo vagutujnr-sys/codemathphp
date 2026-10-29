@@ -77,6 +77,19 @@ export type Project = {
   progress: number;
   summary: string | null;
   updated_at: string;
+  milestones: ProjectMilestone[];
+};
+
+export type ProjectMilestone = {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  status: "planned" | "in_progress" | "completed";
+  due_date: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ProjectUpdate = {
@@ -483,7 +496,7 @@ export const api = {
   },
   projects: () =>
     request<Project[]>(
-      "projects?select=id,client_id,name,status,progress,summary,updated_at&order=updated_at.desc",
+      "projects?select=id,client_id,name,status,progress,summary,updated_at,milestones:project_milestones(id,project_id,title,description,status,due_date,position,created_at,updated_at)&order=updated_at.desc&milestones.order=position.asc,created_at.asc",
     ),
   updates: () =>
     request<ProjectUpdate[]>(
@@ -632,6 +645,40 @@ export const api = {
       .subscribe((status, error) => {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           onError(error?.message ?? "Live chat disconnected. Refresh to reconnect.");
+        }
+      });
+    return () => {
+      void client.removeChannel(channel);
+    };
+  },
+  subscribeToProjectPlan: (
+    user: InvoicingUser,
+    onChange: () => void,
+    onError: (message: string) => void,
+  ) => {
+    const client = realtimeClient();
+    const channel = client.channel(`project-plan-${user.id}`);
+    const projectFilter =
+      user.role === "client" && user.client_id ? { filter: `client_id=eq.${user.client_id}` } : {};
+    channel
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "projects",
+          ...projectFilter,
+        },
+        onChange,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "project_milestones" },
+        onChange,
+      )
+      .subscribe((status, error) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          onError(error?.message ?? "Live project plan updates could not connect.");
         }
       });
     return () => {
@@ -1009,22 +1056,42 @@ export const api = {
         p_reference: payment.reference,
       }),
     }),
-  createProject: (project: {
-    client_id: string;
-    name: string;
-    status: string;
-    progress: number;
-    summary: string;
-  }) =>
+  createProject: (project: { client_id: string; name: string; status: string; summary: string }) =>
     request<string>("rpc/create_project", {
       method: "POST",
       body: JSON.stringify({
         p_client_id: project.client_id,
         p_name: project.name,
         p_status: project.status,
-        p_progress: project.progress,
+        p_progress: 0,
         p_summary: project.summary,
       }),
+    }),
+  createProjectMilestone: (milestone: {
+    project_id: string;
+    title: string;
+    description: string;
+    due_date: string | null;
+    position: number;
+  }) =>
+    request<ProjectMilestone[]>("project_milestones", {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(milestone),
+    }),
+  updateProjectMilestone: (
+    id: string,
+    milestone: Pick<ProjectMilestone, "title" | "description" | "due_date" | "status">,
+  ) =>
+    request<undefined>(`project_milestones?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ ...milestone, updated_at: new Date().toISOString() }),
+    }),
+  deleteProjectMilestone: (id: string) =>
+    request<undefined>(`project_milestones?id=eq.${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Prefer: "return=minimal" },
     }),
   updateInvoiceStatus: (id: string, status: Invoice["status"]) =>
     request<undefined>(`invoices?id=eq.${id}`, {
@@ -1080,11 +1147,11 @@ export const api = {
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify(service),
     }),
-  setProjectProgress: (id: string, progress: number, status: string) =>
+  setProjectStatus: (id: string, status: string) =>
     request<undefined>(`projects?id=eq.${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ progress, status, updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ status, updated_at: new Date().toISOString() }),
     }),
   login: loginWithPin,
 };

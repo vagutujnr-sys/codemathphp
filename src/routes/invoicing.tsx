@@ -44,6 +44,7 @@ import {
   type Payment,
   type Performance,
   type Project,
+  type ProjectMilestone,
   type ProjectUpdate,
   type Service,
   type SharedResource,
@@ -603,6 +604,20 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
   }, [user]);
 
   useEffect(() => {
+    if (!user || (user.role !== "admin" && user.role !== "client")) return;
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshProjectData = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => void loadData(user), 200);
+    };
+    const unsubscribe = api.subscribeToProjectPlan(user, refreshProjectData, setError);
+    return () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      unsubscribe();
+    };
+  }, [user, loadData]);
+
+  useEffect(() => {
     const session = currentSession();
     if (!session) {
       setCheckingSession(false);
@@ -1002,7 +1017,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
           </div>
         </div>
       </header>
-      {user.role === "client" && (
+      {user.role === "client" && tab === "overview" && (
         <section
           aria-label="Client account summary"
           className="bg-primary px-4 py-3 text-primary-foreground lg:hidden"
@@ -1032,9 +1047,9 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
         </section>
       )}
       <div
-        className={`mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] ${
+        className={`mx-auto grid w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_1fr] ${
           user.role === "client"
-            ? "w-full gap-0 px-0 py-0 pb-24 sm:px-0 lg:gap-6 lg:px-6 lg:py-6"
+            ? "max-w-none gap-0 px-0 py-0 pb-24 sm:px-0 lg:max-w-7xl lg:gap-6 lg:px-6 lg:py-6"
             : ""
         }`}
       >
@@ -1073,7 +1088,7 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
             <Activity className="h-4 w-4" /> Refresh data
           </button>
         </nav>
-        <main className={`min-w-0 ${user.role === "client" ? "w-full" : ""}`}>
+        <main className="min-w-0 w-full max-w-none">
           <div
             className={`mb-5 flex flex-wrap items-end justify-between gap-3 ${
               user.role === "client" ? "hidden lg:flex" : ""
@@ -1089,7 +1104,9 @@ export function InvoicingApp({ entryMode = "dashboard" }: { entryMode?: "dashboa
             </div>
             {loading && <span className="text-sm text-muted-foreground">Syncing…</span>}
           </div>
-          <div className={`mb-4 flex justify-end ${user.role === "client" ? "hidden lg:flex" : ""}`}>
+          <div
+            className={`mb-4 flex justify-end ${user.role === "client" ? "hidden lg:flex" : ""}`}
+          >
             <NotificationPermissionButton />
           </div>
           {error && (
@@ -1499,10 +1516,7 @@ function ClientOverview({
               const projectUpdates = updates.filter((update) => update.project_id === project.id);
               const expanded = expandedProject === project.id;
               return (
-                <article
-                  key={project.id}
-                  className="border-b border-border bg-card px-5 py-5"
-                >
+                <article key={project.id} className="border-b border-border bg-card px-5 py-5">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1">
                     <h3 className="font-display text-lg font-bold leading-tight text-secondary">
                       {project.name}
@@ -1521,6 +1535,9 @@ function ClientOverview({
                     </div>
                     <p className="col-start-1 mt-1 text-sm font-semibold text-secondary">
                       {projectUpdates.length} update{projectUpdates.length === 1 ? "" : "s"} shared
+                    </p>
+                    <p className="col-start-1 text-xs text-muted-foreground">
+                      {milestoneCompletion(project.milestones)} deliverables complete
                     </p>
                     <p className="col-start-2 row-start-4 text-right text-xs text-muted-foreground">
                       Updated {project.updated_at.slice(0, 10)}
@@ -1541,6 +1558,7 @@ function ClientOverview({
                           {project.summary}
                         </p>
                       )}
+                      <MilestoneList milestones={project.milestones} />
                       {projectUpdates.length > 0 && (
                         <ul className="mt-3 space-y-2">
                           {projectUpdates.map((update) => (
@@ -2506,8 +2524,8 @@ function InvoicesPanel(props: {
       .includes(search.toLowerCase()),
   );
   return (
-    <div className="space-y-6">
-      <section className="border border-border bg-card p-5">
+    <div className="w-full max-w-none space-y-6">
+      <section className="w-full border border-border bg-card p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-bold text-secondary">
             {props.isAdmin || props.isClerk ? "All invoices" : "Your invoices"}
@@ -3210,7 +3228,6 @@ function AdminWorkspace({
         client_id: String(form.get("client_id")),
         name: String(form.get("name")).trim(),
         status: String(form.get("status")),
-        progress: Number(form.get("progress")),
         summary: String(form.get("summary") ?? "").trim(),
       });
       formElement.reset();
@@ -3332,22 +3349,18 @@ function AdminWorkspace({
             <form onSubmit={addProject} className="space-y-3">
               <ClientSelect clients={clients} name="client_id" />
               <Field label="Project name" name="name" required />
-              <div className="grid grid-cols-2 gap-2">
-                <label className="block text-sm font-semibold">
-                  Status
-                  <select
-                    name="status"
-                    className="mt-1.5 h-9 w-full border border-input bg-background px-2 font-normal"
-                  >
-                    <option value="in_progress">In progress</option>
-                    <option value="planning">Planning</option>
-                    <option value="review">In review</option>
-                    <option value="completed">Completed</option>
-                    <option value="on_hold">On hold</option>
-                  </select>
-                </label>
-                <Field label="Progress %" name="progress" type="number" value="0" />
-              </div>
+              <label className="block text-sm font-semibold">
+                Status
+                <select
+                  name="status"
+                  className="mt-1.5 h-9 w-full border border-input bg-background px-2 font-normal"
+                >
+                  <option value="planning">Planning</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="review">In review</option>
+                  <option value="on_hold">On hold</option>
+                </select>
+              </label>
               <label className="block text-sm font-semibold">
                 Summary
                 <textarea
@@ -3470,7 +3483,7 @@ function AdminWorkspace({
       <section className="grid gap-5 xl:grid-cols-3">
         <div className="border border-border bg-card p-5">
           <h2 className="mb-3 font-display font-bold text-secondary">
-            Projects ({projects.length})
+            Project planning & progress ({projects.length})
           </h2>
           <AdminProjectCards
             clients={clients}
@@ -3510,7 +3523,11 @@ function ProfilePanel({ clients, user }: { clients: Client[]; user: InvoicingUse
       : []),
   ];
   return (
-    <section className="max-w-2xl border border-border bg-card p-5 shadow-card">
+    <section
+      className={`w-full border border-border bg-card p-5 shadow-card ${
+        user.role === "client" ? "max-w-none" : "max-w-2xl"
+      }`}
+    >
       <div className="flex items-center gap-3 border-b border-border pb-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
           <UserRound aria-hidden="true" className="h-6 w-6" />
@@ -3576,16 +3593,16 @@ function ClientWorkspace({
   resources: SharedResource[];
 }) {
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
-      <section className="border border-border bg-card p-5">
+    <div className="grid w-full max-w-none gap-6 xl:grid-cols-2">
+      <section className="w-full border border-border bg-card p-5">
         <h2 className="mb-4 font-display font-bold text-secondary">Project progress</h2>
         <ProjectCards projects={projects} />
       </section>
-      <section className="border border-border bg-card p-5">
+      <section className="w-full border border-border bg-card p-5">
         <h2 className="mb-4 font-display font-bold text-secondary">Updates from CodeMath</h2>
         <UpdateList updates={updates} projects={projects} />
       </section>
-      <section className="border border-border bg-card p-5 xl:col-span-2">
+      <section className="w-full border border-border bg-card p-5 xl:col-span-2">
         <h2 className="mb-4 font-display font-bold text-secondary">Shared files and resources</h2>
         <ResourceList resources={resources} />
       </section>
@@ -3606,21 +3623,71 @@ function AdminProjectCards({
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [planningProjectId, setPlanningProjectId] = useState<string | null>(null);
+  const planningProject = projects.find((project) => project.id === planningProjectId) ?? null;
   async function saveProject(event: FormEvent<HTMLFormElement>, project: Project) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setBusyId(project.id);
     setError("");
     try {
-      await api.setProjectProgress(
-        project.id,
-        Number(form.get("progress")),
-        String(form.get("status")),
-      );
+      await api.setProjectStatus(project.id, String(form.get("status")));
       setEditingProject(null);
       onRefresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to update project.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+  async function addMilestone(event: FormEvent<HTMLFormElement>, project: Project) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(event.currentTarget);
+    setBusyId(project.id);
+    setError("");
+    try {
+      await api.createProjectMilestone({
+        project_id: project.id,
+        title: String(form.get("title")).trim(),
+        description: String(form.get("description") ?? "").trim(),
+        due_date: String(form.get("due_date") ?? "") || null,
+        position: project.milestones.length,
+      });
+      formElement.reset();
+      onRefresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to add project deliverable.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+  async function updateMilestone(milestone: ProjectMilestone, status: ProjectMilestone["status"]) {
+    setBusyId(milestone.id);
+    setError("");
+    try {
+      await api.updateProjectMilestone(milestone.id, {
+        title: milestone.title,
+        description: milestone.description ?? "",
+        due_date: milestone.due_date,
+        status,
+      });
+      onRefresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to update project deliverable.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+  async function deleteMilestone(milestone: ProjectMilestone) {
+    if (!window.confirm(`Delete "${milestone.title}" from this project plan?`)) return;
+    setBusyId(milestone.id);
+    setError("");
+    try {
+      await api.deleteProjectMilestone(milestone.id);
+      onRefresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to delete project deliverable.");
     } finally {
       setBusyId(null);
     }
@@ -3635,17 +3702,124 @@ function AdminProjectCards({
         >
           <p className="font-semibold text-secondary">{project.name}</p>
           <p className="mb-2 text-xs text-muted-foreground">
-            {clients.find((client) => client.id === project.client_id)?.name ?? "Client"}
+            {clients.find((client) => client.id === project.client_id)?.name ?? "Client"} ·{" "}
+            {project.progress}% · {milestoneCompletion(project.milestones)} deliverables complete
           </p>
-          <button
-            type="button"
-            onClick={() => setEditingProject(project)}
-            className="border border-border px-3 py-2 text-xs font-semibold"
+          <div
+            role="progressbar"
+            aria-label={`${project.name} progress`}
+            aria-valuenow={project.progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="mb-3 h-2 overflow-hidden rounded-full bg-muted"
           >
-            Update project
-          </button>
+            <div className="h-full bg-primary" style={{ width: `${project.progress}%` }} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setPlanningProjectId(project.id)}
+              className="border border-primary bg-accent px-3 py-2 text-xs font-semibold text-accent-foreground"
+            >
+              Plan deliverables
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingProject(project)}
+              className="border border-border px-3 py-2 text-xs font-semibold"
+            >
+              Update status
+            </button>
+          </div>
         </div>
       ))}
+      {planningProject && (
+        <Modal
+          open
+          title={`Plan: ${planningProject.name}`}
+          onClose={() => setPlanningProjectId(null)}
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {milestoneCompletion(planningProject.milestones)} complete · Project progress updates
+              automatically as deliverables are completed.
+            </p>
+            <form
+              onSubmit={(event) => void addMilestone(event, planningProject)}
+              className="space-y-3 border-b border-border pb-4"
+            >
+              <Field label="Deliverable / milestone" name="title" required />
+              <label className="block text-sm font-semibold text-secondary">
+                Description
+                <textarea
+                  name="description"
+                  rows={2}
+                  className="mt-1.5 w-full border border-input bg-background p-2 font-normal"
+                />
+              </label>
+              <Field label="Target date (optional)" name="due_date" type="date" />
+              <button
+                disabled={busyId === planningProject.id}
+                className="bg-gradient-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+              >
+                {busyId === planningProject.id ? "Adding…" : "Add deliverable"}
+              </button>
+            </form>
+            {planningProject.milestones.length ? (
+              <ul className="space-y-3">
+                {planningProject.milestones.map((milestone) => (
+                  <li key={milestone.id} className="border border-border p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-secondary">{milestone.title}</p>
+                        {milestone.description && (
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                            {milestone.description}
+                          </p>
+                        )}
+                        {milestone.due_date && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Target: {milestone.due_date}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busyId === milestone.id}
+                        onClick={() => void deleteMilestone(milestone)}
+                        className="border border-destructive/40 px-2 py-1 text-xs font-semibold text-destructive disabled:opacity-60"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <label className="mt-3 block text-xs font-semibold text-secondary">
+                      Deliverable status
+                      <select
+                        aria-label={`Status for ${milestone.title}`}
+                        value={milestone.status}
+                        disabled={busyId === milestone.id}
+                        onChange={(event) =>
+                          void updateMilestone(
+                            milestone,
+                            event.target.value as ProjectMilestone["status"],
+                          )
+                        }
+                        className="mt-1 block h-9 w-full border border-input bg-background px-2 text-sm font-normal"
+                      >
+                        <option value="planned">Planned</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState text="No deliverables planned yet. Add milestones to create a project plan." />
+            )}
+          </div>
+        </Modal>
+      )}
       {editingProject && (
         <Modal open title="Update project" onClose={() => setEditingProject(null)}>
           <form onSubmit={(event) => void saveProject(event, editingProject)} className="space-y-3">
@@ -3664,12 +3838,9 @@ function AdminProjectCards({
                 <option value="on_hold">On hold</option>
               </select>
             </label>
-            <Field
-              label="Progress %"
-              name="progress"
-              type="number"
-              value={String(editingProject.progress)}
-            />
+            <p className="text-sm text-muted-foreground">
+              Progress is calculated from completed deliverables: {editingProject.progress}%.
+            </p>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -3713,12 +3884,51 @@ function ProjectCards({ projects }: { projects: Project[] }) {
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
             <div className="h-full bg-primary" style={{ width: `${project.progress}%` }} />
           </div>
+          <p className="mt-2 text-xs font-semibold text-secondary">
+            {milestoneCompletion(project.milestones)} deliverables complete
+          </p>
+          <MilestoneList milestones={project.milestones} />
           <p className="mt-2 text-xs text-muted-foreground">
             Updated {project.updated_at.slice(0, 10)}
           </p>
         </article>
       ))}
     </div>
+  );
+}
+
+function milestoneCompletion(milestones: ProjectMilestone[]) {
+  const completed = milestones.filter((milestone) => milestone.status === "completed").length;
+  return `${completed}/${milestones.length}`;
+}
+
+function MilestoneList({ milestones }: { milestones: ProjectMilestone[] }) {
+  if (!milestones.length) {
+    return (
+      <p className="mt-3 text-sm text-muted-foreground">The project plan is being prepared.</p>
+    );
+  }
+  return (
+    <ul className="mt-3 space-y-3 border-t border-border pt-3">
+      {milestones.map((milestone) => (
+        <li key={milestone.id} className="border-l-2 border-primary pl-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <p className="font-semibold text-secondary">{milestone.title}</p>
+            <span className="text-xs capitalize text-muted-foreground">
+              {milestone.status.replaceAll("_", " ")}
+            </span>
+          </div>
+          {milestone.description && (
+            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+              {milestone.description}
+            </p>
+          )}
+          {milestone.due_date && (
+            <p className="mt-1 text-xs text-muted-foreground">Target: {milestone.due_date}</p>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

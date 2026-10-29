@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function response(body: unknown, status = 200, origin = "https://codemathphp.co.za") {
+function response(body: unknown, status = 200, origin = "https://www.codemathphp.co.za") {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -58,6 +58,7 @@ Deno.serve(async (request) => {
   const allowedOrigins = [
     "https://codemathphp-website.vercel.app",
     "https://codemathphp.co.za",
+    "https://www.codemathphp.co.za",
     "http://localhost:3000",
     "http://localhost:5173",
     ...(Deno.env.get("PIN_LOGIN_ALLOWED_ORIGINS") ?? "")
@@ -68,7 +69,7 @@ Deno.serve(async (request) => {
   const allowedOrigin =
     origin && (allowedOrigins.includes(origin) || /^http:\/\/localhost:\d+$/.test(origin))
       ? origin
-      : "https://codemathphp.co.za";
+      : "https://www.codemathphp.co.za";
   if (origin && !allowedOrigins.includes(origin) && !/^http:\/\/localhost:\d+$/.test(origin))
     return response({ error: "Origin not allowed." }, 403, allowedOrigin);
   if (request.method === "OPTIONS")

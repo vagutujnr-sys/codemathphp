@@ -587,7 +587,11 @@ export function ClientChat({ clients, user, onBack }: Props) {
       </header>
 
       <div className="relative min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-        <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-end gap-2">
+        <div
+          className={`mx-auto flex min-h-full flex-col justify-end gap-2 ${
+            user.role === "client" ? "w-full max-w-none" : "max-w-3xl"
+          }`}
+        >
           <div className="mb-2 flex justify-center">
             <NotificationPermissionButton className="inline-flex h-9 items-center gap-2 rounded-full border border-border bg-card/90 px-3 text-xs font-medium text-secondary shadow-sm hover:bg-card disabled:cursor-default disabled:opacity-70" />
           </div>
@@ -750,7 +754,11 @@ export function ClientChat({ clients, user, onBack }: Props) {
       </div>
 
       {error && (
-        <div className="z-10 mx-auto flex w-full max-w-3xl items-start gap-2 px-3 pb-2 sm:px-6">
+        <div
+          className={`z-10 mx-auto flex w-full items-start gap-2 px-3 pb-2 sm:px-6 ${
+            user.role === "client" ? "max-w-none" : "max-w-3xl"
+          }`}
+        >
           <p
             role="alert"
             className="flex-1 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -775,7 +783,11 @@ export function ClientChat({ clients, user, onBack }: Props) {
           onChange={onFileSelected}
         />
         {replyTo && (
-          <div className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-lg border-l-2 border-primary bg-muted/70 px-3 py-2">
+          <div
+            className={`mx-auto flex w-full items-center gap-2 rounded-lg border-l-2 border-primary bg-muted/70 px-3 py-2 ${
+              user.role === "client" ? "max-w-none" : "max-w-3xl"
+            }`}
+          >
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-primary">
                 Replying to {replyTo.sender_id === user.id ? "yourself" : contactName}
@@ -792,7 +804,11 @@ export function ClientChat({ clients, user, onBack }: Props) {
             </button>
           </div>
         )}
-        <div className="mx-auto flex w-full max-w-3xl items-end gap-2">
+        <div
+          className={`mx-auto flex w-full items-end gap-2 ${
+            user.role === "client" ? "max-w-none" : "max-w-3xl"
+          }`}
+        >
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
